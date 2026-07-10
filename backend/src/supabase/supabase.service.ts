@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import WebSocket from 'ws'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
@@ -19,15 +20,21 @@ export class SupabaseService implements OnModuleInit {
       throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env')
     }
 
+    const realtimeOptions = {
+      transport: WebSocket,
+    }
+
     // Для проверки JWT — используем anon key
     this.client = createClient(url, anonKey, {
       auth: { persistSession: false },
+      realtime: realtimeOptions,
     })
 
     // Для операций от имени сервера (админ) — service_role key
     if (serviceRoleKey) {
       this.adminClient = createClient(url, serviceRoleKey, {
         auth: { persistSession: false },
+        realtime: realtimeOptions,
       })
     }
   }
