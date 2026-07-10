@@ -44,7 +44,7 @@ export const useTimerStore = defineStore('timer', () => {
     stopInterval()
   }
 
-  function stop() {
+  async function stop() {
     if (currentElapsed.value === 0) return
 
     const sessionsStore = useSessionsStore()
@@ -61,13 +61,17 @@ export const useTimerStore = defineStore('timer', () => {
 
     if (duration > 0) {
       const now = Date.now()
-      sessionsStore.addSession({
-        id: generateId(),
-        startTime: now - duration,
-        endTime: now,
-        duration,
-        date: todayDate(),
-      })
+      try {
+        await sessionsStore.addSession({
+          id: generateId(),
+          startTime: now - duration,
+          endTime: now,
+          duration,
+          date: todayDate(),
+        })
+      } catch (e) {
+        console.error('Ошибка сохранения сессии:', e)
+      }
     }
 
     // Сброс

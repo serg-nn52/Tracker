@@ -33,6 +33,7 @@ backend/node_modules
 
 # Environment
 backend/.env
+.env
 
 # Local Netlify folder
 .netlify

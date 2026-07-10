@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { ViewName } from './types/session'
+import { useAuthStore } from './stores/authStore'
+import { useSessionsStore } from './stores/sessionsStore'
 import ThemeToggle from './components/ThemeToggle.vue'
 import TimerView from './views/TimerView.vue'
 import TodayView from './views/TodayView.vue'
 import WeeklyView from './views/WeeklyView.vue'
+import LoginView from './views/LoginView.vue'
+
+const auth = useAuthStore()
+const sessionsStore = useSessionsStore()
 
 const currentView = ref<ViewName>('timer')
+const appReady = ref(false)
 
 function setView(view: ViewName) {
   currentView.value = view
@@ -17,10 +24,23 @@ const tabs: { name: ViewName; label: string; icon: string }[] = [
   { name: 'today', label: 'Сегодня', icon: '📋' },
   { name: 'weekly', label: 'Неделя', icon: '📊' },
 ]
+
+onMounted(async () => {
+  await auth.init()
+  if (auth.user) {
+    await sessionsStore.fetchSessions()
+  }
+  appReady.value = true
+})
+
+const userEmail = computed(() => auth.user?.email ?? '')
+
 </script>
 
 <template>
-  <div :class="$style.layout">
+  <LoginView v-if="appReady && !auth.user" />
+
+  <div v-else-if="appReady" :class="$style.layout">
     <!-- Боковая панель -->
     <aside :class="$style.sidebar">
       <div :class="$style.sidebarHeader">
@@ -40,6 +60,10 @@ const tabs: { name: ViewName; label: string; icon: string }[] = [
       </nav>
 
       <div :class="$style.sidebarFooter">
+        <div :class="$style.userSection" v-if="auth.user">
+          <span :class="$style.userEmail">{{ userEmail }}</span>
+          <button :class="$style.logoutBtn" @click="auth.signOut()">Выйти</button>
+        </div>
         <ThemeToggle />
       </div>
     </aside>
@@ -50,6 +74,10 @@ const tabs: { name: ViewName; label: string; icon: string }[] = [
       <TodayView v-if="currentView === 'today'" />
       <WeeklyView v-if="currentView === 'weekly'" />
     </main>
+  </div>
+
+  <div v-else :class="$style.loading">
+    <p>Загрузка…</p>
   </div>
 </template>
 
@@ -128,12 +156,49 @@ const tabs: { name: ViewName; label: string; icon: string }[] = [
 .sidebarFooter {
   padding: var(--spacing-md) var(--spacing-lg);
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.userSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.userEmail {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutBtn {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  background: none;
+  white-space: nowrap;
+}
+
+.logoutBtn:hover {
+  text-decoration: underline;
 }
 
 .main {
   flex: 1;
   padding: var(--spacing-xl) var(--spacing-2xl);
   max-width: 800px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--color-text-secondary);
 }
 </style>

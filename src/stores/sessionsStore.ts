@@ -1,26 +1,48 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { TimeSession } from '../types/session'
-import { getFromStorage, saveToStorage } from '../utils/storage'
 import { todayDate, getWeekRange, dateToISO } from '../utils/formatters'
+import { api } from '../utils/api'
 
-const STORAGE_KEY = 'sessions'
+interface SessionRow {
+  id: string
+  user_id: string
+  start_time: string
+  end_time: string
+  duration: number
+  date: string
+  created_at: string
+}
+
+function mapRowToSession(row: SessionRow): TimeSession {
+  return {
+    id: row.id,
+    startTime: new Date(row.start_time).getTime(),
+    endTime: new Date(row.end_time).getTime(),
+    duration: row.duration,
+    date: row.date,
+  }
+}
 
 export const useSessionsStore = defineStore('sessions', () => {
   const sessions = ref<TimeSession[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-  // Загружаем из localStorage
-  function loadFromStorage() {
-    sessions.value = getFromStorage<TimeSession[]>(STORAGE_KEY, [])
+  // Загрузить все сессии с бэкенда
+  async function fetchSessions() {
+    loading.value = true
+    error.value = null
+    try {
+      const rows = await api.get<SessionRow[]>('/sessions')
+      sessions.value = rows.map(mapRowToSession)
+    } catch (e: any) {
+      error.value = e.message || 'Ошибка загрузки сессий'
+      // При ошибке не сбрасываем локальные данные
+    } finally {
+      loading.value = false
+    }
   }
-
-  // Сохраняем
-  function persist() {
-    saveToStorage(STORAGE_KEY, sessions.value)
-  }
-
-  // Инициализация
-  loadFromStorage()
 
   // Сегодняшние сессии
   const todaySessions = computed(() => {
@@ -70,24 +92,47 @@ export const useSessionsStore = defineStore('sessions', () => {
     return weeklySummary.value.reduce((sum, d) => sum + d.total, 0)
   })
 
-  function addSession(session: TimeSession) {
-    sessions.value.push(session)
-    persist()
+  async function addSession(session: TimeSession) {
+    try {
+      if (session.endTime === null) {
+        throw new Error('Нельзя сохранить незавершённую сессию')
+      }
+      const row = await api.post<SessionRow>('/sessions', {
+        startTime: new Date(session.startTime).toISOString(),
+        endTime: new Date(session.endTime).toISOString(),
+        duration: session.duration,
+        date: session.date,
+      })
+      // Добавляем созданную сервером сессию (с её id)
+      const created = mapRowToSession(row)
+      sessions.value.push(created)
+      return created
+    } catch (e: any) {
+      error.value = e.message || 'Ошибка создания сессии'
+      throw e
+    }
   }
 
-  function deleteSession(id: string) {
-    sessions.value = sessions.value.filter((s) => s.id !== id)
-    persist()
+  async function deleteSession(id: string) {
+    try {
+      await api.delete(`/sessions/${id}`)
+      sessions.value = sessions.value.filter((s) => s.id !== id)
+    } catch (e: any) {
+      error.value = e.message || 'Ошибка удаления сессии'
+      throw e
+    }
   }
 
   return {
     sessions,
+    loading,
+    error,
     todaySessions,
     todayTotal,
     weeklySessions,
     weeklySummary,
     weeklyTotal,
-    loadFromStorage,
+    fetchSessions,
     addSession,
     deleteSession,
   }
