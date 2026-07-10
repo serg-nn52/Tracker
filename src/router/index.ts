@@ -36,13 +36,11 @@ const router = createRouter({
   ],
 })
 
-// Для dev/e2e можно отключить проверку auth через VITE_BYPASS_AUTH=true
-const isAuthDisabled = import.meta.env.VITE_BYPASS_AUTH === 'true'
-
 router.beforeEach((to) => {
-  if (isAuthDisabled) return
-
   const auth = useAuthStore()
+
+  // Dev-режим: env-флаг или runtime-кнопка в интерфейсе
+  if (auth.devBypass) return
 
   if (to.meta.requiresAuth && !auth.user) {
     return { name: 'login' }

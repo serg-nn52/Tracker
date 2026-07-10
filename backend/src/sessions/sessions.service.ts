@@ -6,9 +6,9 @@ import { CreateSessionDto } from './dto/create-session.dto';
 export class SessionsService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  async create(userId: string, dto: CreateSessionDto) {
+  async create(userId: string, jwt: string | undefined, dto: CreateSessionDto) {
     const { data, error } = await this.supabase
-      .getAdminClient()
+      .getClientWithJwt(jwt)
       .from('sessions')
       .insert({
         user_id: userId,
@@ -24,9 +24,9 @@ export class SessionsService {
     return data;
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string, jwt: string | undefined) {
     const { data, error } = await this.supabase
-      .getAdminClient()
+      .getClientWithJwt(jwt)
       .from('sessions')
       .select('*')
       .eq('user_id', userId)
@@ -36,9 +36,9 @@ export class SessionsService {
     return data;
   }
 
-  async findByDate(userId: string, date: string) {
+  async findByDate(userId: string, jwt: string | undefined, date: string) {
     const { data, error } = await this.supabase
-      .getAdminClient()
+      .getClientWithJwt(jwt)
       .from('sessions')
       .select('*')
       .eq('user_id', userId)
@@ -50,17 +50,17 @@ export class SessionsService {
   }
 
   /** Суммарное время за сегодня */
-  async todaySummary(userId: string) {
+  async todaySummary(userId: string, jwt: string | undefined) {
     const today = new Date().toISOString().split('T')[0];
-    const sessions = await this.findByDate(userId, today);
+    const sessions = await this.findByDate(userId, jwt, today);
 
     const total = sessions.reduce((sum, s) => sum + s.duration, 0);
     return { date: today, sessions, total };
   }
 
   /** Сводка за последние 7 дней */
-  async weeklySummary(userId: string) {
-    const sessions = await this.findAll(userId);
+  async weeklySummary(userId: string, jwt: string | undefined) {
+    const sessions = await this.findAll(userId, jwt);
 
     // Группируем по дате
     const dayLabels: Record<string, string> = {
@@ -104,10 +104,10 @@ export class SessionsService {
     return { days, weeklyTotal };
   }
 
-  async remove(userId: string, id: string) {
+  async remove(userId: string, jwt: string | undefined, id: string) {
     // Проверяем, что сессия принадлежит пользователю
     const { data: session, error: findError } = await this.supabase
-      .getAdminClient()
+      .getClientWithJwt(jwt)
       .from('sessions')
       .select('*')
       .eq('id', id)
@@ -122,7 +122,7 @@ export class SessionsService {
     }
 
     const { error } = await this.supabase
-      .getAdminClient()
+      .getClientWithJwt(jwt)
       .from('sessions')
       .delete()
       .eq('id', id);

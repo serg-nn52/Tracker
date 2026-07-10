@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
 const router = useRouter()
 const auth = useAuthStore()
+const isDev = import.meta.env.DEV
+
+// При включении bypass со страницы логина — переходим на таймер
+watch(() => auth.devBypass, (val) => {
+  if (val) router.push({ name: 'timer' })
+})
 
 const email = ref('')
 const password = ref('')
@@ -46,9 +52,12 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div :class="$style.page">
+  <div :class="[$style.page, auth.devBypass && $style.devBypassActive]">
     <div :class="$style.card">
-      <h1 :class="$style.title">Tracker</h1>
+      <h1 :class="$style.title">
+        Tracker
+        <span v-if="auth.devBypass" :class="$style.devBadge">DEV</span>
+      </h1>
       <p :class="$style.subtitle">
         {{ isSignUp ? 'Создайте аккаунт' : 'Войдите в аккаунт' }}
       </p>
@@ -91,6 +100,14 @@ async function handleSubmit() {
       <button :class="$style.switchBtn" @click="isSignUp = !isSignUp; formError = ''; successMsg = ''">
         {{ isSignUp ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться' }}
       </button>
+
+      <button
+        v-if="isDev"
+        :class="$style.devToggle"
+        @click="auth.toggleDevBypass()"
+      >
+        {{ auth.devBypass ? '🔓 Без авторизации' : '🔒 С авторизацией' }}
+      </button>
     </div>
   </div>
 </template>
@@ -104,6 +121,10 @@ async function handleSubmit() {
   padding: var(--spacing-lg);
 }
 
+.devBypassActive {
+  border-top: 3px solid #f59e0b;
+}
+
 .card {
   width: 100%;
   max-width: 400px;
@@ -115,11 +136,25 @@ async function handleSubmit() {
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--color-primary);
   text-align: center;
   margin-bottom: var(--spacing-xs);
+}
+
+.devBadge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f59e0b;
+  color: #1a1a2e;
 }
 
 .subtitle {
@@ -202,5 +237,26 @@ async function handleSubmit() {
 .success {
   color: var(--color-success);
   font-size: var(--font-size-sm);
+}
+
+.devToggle {
+  margin-top: var(--spacing-lg);
+  width: 100%;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.devToggle:hover {
+  color: var(--color-text);
+  border-color: var(--color-primary);
 }
 </style>

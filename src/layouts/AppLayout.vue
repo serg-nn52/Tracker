@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useSessionsStore } from '../stores/sessionsStore'
@@ -10,13 +10,41 @@ const router = useRouter()
 const auth = useAuthStore()
 const sessionsStore = useSessionsStore()
 
-onMounted(() => {
-  sessionsStore.fetchSessions()
-})
+// Отслеживаем пользователя, чтобы загружать его сессии
+watch(() => auth.user, (user, prevUser) => {
+  if (prevUser === undefined) {
+    // Первый вызов (immediate): загружаем, если есть пользователь или bypass
+    if (user || auth.devBypass) {
+      sessionsStore.fetchSessions()
+    }
+    return
+  }
+  if (user) {
+    // Сменился пользователь — загружаем его сессии
+    sessionsStore.fetchSessions()
+  } else {
+    // Пользователь вышел — очищаем сессии
+    sessionsStore.reset()
+  }
+}, { immediate: true })
 
 async function handleLogout() {
-  await auth.signOut()
-  router.push({ name: 'login' })
+  try {
+    await auth.signOut()
+  } catch {
+    // signOut может упасть, если нет сессии
+  }
+  sessionsStore.reset()
+  auth.devBypass = false
+  router.replace({ name: 'login' })
+}
+
+function handleToggleDev() {
+  auth.toggleDevBypass()
+  if (!auth.devBypass) {
+    // Если выключили bypass — переходим на логин
+    router.replace({ name: 'login' })
+  }
 }
 
 const tabs = [
@@ -26,14 +54,18 @@ const tabs = [
 ] as const
 
 const userEmail = auth.user?.email ?? ''
+const isDev = import.meta.env.DEV
 </script>
 
 <template>
-  <div :class="$style.layout">
+  <div :class="[$style.layout, auth.devBypass && $style.devBypassActive]">
     <!-- Боковая панель -->
     <aside :class="$style.sidebar">
       <div :class="$style.sidebarHeader">
-        <h2 :class="$style.logo">Tracker</h2>
+        <h2 :class="$style.logo">
+          Tracker
+          <span v-if="auth.devBypass" :class="$style.devBadge">DEV</span>
+        </h2>
       </div>
 
       <nav :class="$style.nav">
@@ -49,9 +81,16 @@ const userEmail = auth.user?.email ?? ''
       </nav>
 
       <div :class="$style.sidebarFooter">
-        <div :class="$style.userSection" v-if="auth.user">
-          <span :class="$style.userEmail">{{ userEmail }}</span>
+        <div :class="$style.userSection" v-if="auth.user || auth.devBypass">
+          <span :class="$style.userEmail" v-if="auth.user">{{ userEmail }}</span>
+          <span :class="$style.userEmail" v-else>Без авторизации</span>
           <button :class="$style.logoutBtn" @click="handleLogout">Выйти</button>
+        </div>
+        <div :class="$style.devSection" v-if="isDev">
+          <button :class="$style.devToggle" @click="handleToggleDev">
+            <template v-if="auth.devBypass">🔓 Без авторизации</template>
+            <template v-else>🔒 С авторизацией</template>
+          </button>
         </div>
         <ThemeToggle />
       </div>
@@ -68,6 +107,14 @@ const userEmail = auth.user?.email ?? ''
 .layout {
   display: flex;
   min-height: 100vh;
+}
+
+.devBypassActive {
+  border-top: 3px solid #f59e0b;
+}
+
+.devBypassActive .sidebar {
+  border-top: none;
 }
 
 .sidebar {
@@ -88,10 +135,24 @@ const userEmail = auth.user?.email ?? ''
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-primary);
   letter-spacing: -0.5px;
+}
+
+.devBadge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f59e0b;
+  color: #1a1a2e;
+  vertical-align: middle;
 }
 
 .nav {
@@ -170,6 +231,32 @@ const userEmail = auth.user?.email ?? ''
 
 .logoutBtn:hover {
   text-decoration: underline;
+}
+
+.devSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devToggle {
+  width: 100%;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.devToggle:hover {
+  color: var(--color-text);
+  border-color: var(--color-primary);
 }
 
 .main {

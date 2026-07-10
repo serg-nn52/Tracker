@@ -50,6 +50,32 @@ export class SupabaseService implements OnModuleInit {
     return this.adminClient;
   }
 
+  /**
+   * Клиент с JWT конкретного пользователя.
+   * Использует anon key + Bearer JWT → RLS работает через auth.uid().
+   * Если jwt не передан — возвращает adminClient (для DEV_MODE).
+   */
+  getClientWithJwt(jwt?: string): SupabaseClient {
+    if (!jwt) return this.getAdminClient();
+
+    const url = process.env.SUPABASE_URL;
+    const anonKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!url || !anonKey) {
+      throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be set');
+    }
+
+    return createClient(url, anonKey, {
+      auth: { persistSession: false },
+      global: {
+        headers: { Authorization: `Bearer ${jwt}` },
+      },
+      realtime: {
+        transport: WebSocket as any,
+      },
+    });
+  }
+
   /** Создать или найти dev-пользователя для режима разработки */
   async getDevUserId(): Promise<string> {
     if (this.devUserId) return this.devUserId;

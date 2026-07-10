@@ -20,26 +20,26 @@ export class SessionsController {
 
   @Post()
   create(@Request() req: any, @Body() dto: CreateSessionDto) {
-    return this.sessionsService.create(req.user.id, dto);
+    return this.sessionsService.create(req.user.id, req.accessToken, dto);
   }
 
   @Get()
   findAll(@Request() req: any) {
-    return this.sessionsService.findAll(req.user.id);
+    return this.sessionsService.findAll(req.user.id, req.accessToken);
   }
 
   @Get('today')
   getToday(@Request() req: any) {
-    return this.sessionsService.todaySummary(req.user.id);
+    return this.sessionsService.todaySummary(req.user.id, req.accessToken);
   }
 
   @Get('weekly')
   getWeekly(@Request() req: any) {
-    return this.sessionsService.weeklySummary(req.user.id);
+    return this.sessionsService.weeklySummary(req.user.id, req.accessToken);
   }
 
   @Delete(':id')
   remove(@Request() req: any, @Param('id') id: string) {
-    return this.sessionsService.remove(req.user.id, id);
+    return this.sessionsService.remove(req.user.id, req.accessToken, id);
   }
 }

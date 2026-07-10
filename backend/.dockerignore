@@ -1,0 +1,24 @@
+# Environment (содержит секреты)
+.env
+.env.*
+
+# Зависимости (устанавливаются npm ci)
+node_modules
+
+# Артефакты сборки (собираются заново)
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Тесты
+test
+coverage
+
+# README и документация
+*.md

@@ -103,6 +103,12 @@ export const useSessionsStore = defineStore('sessions', () => {
     }
   }
 
+  /** Сбросить сессии (при логауте) */
+  function reset() {
+    sessions.value = []
+    error.value = null
+  }
+
   async function deleteSession(id: string) {
     try {
       await sessionsService.remove(id)
@@ -125,5 +131,6 @@ export const useSessionsStore = defineStore('sessions', () => {
     fetchSessions,
     addSession,
     deleteSession,
+    reset,
   }
 })

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { AuthError, User, AuthResponse } from '@supabase/supabase-js'
 import { supabase } from '../utils/supabase'
 
@@ -8,11 +8,24 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  /**
+   * Runtime-флаг для отключения проверки авторизации.
+   * Синхронно инициализируется из VITE_BYPASS_AUTH,
+   * чтобы guard видел правильное значение до асинхронной init().
+   */
+  const devBypass = ref(import.meta.env.VITE_BYPASS_AUTH === 'true')
+
   /** Восстановить сессию из localStorage (вызывать при старте) */
   async function init() {
     loading.value = true
     const { data } = await supabase.auth.getSession()
     user.value = data.session?.user ?? null
+
+    // Если есть реальная сессия — отключаем bypass, даже если стоит env-флаг
+    if (user.value) {
+      devBypass.value = false
+    }
+    // Если сессии нет — devBypass остаётся как был (из VITE_BYPASS_AUTH)
 
     // Слушаем изменения auth (например, при OAuth)
     supabase.auth.onAuthStateChange((_event, session) => {
@@ -75,16 +88,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const isAuthenticated = () => user.value !== null
+  const isAuthenticated = computed(() => user.value !== null || devBypass.value)
+
+  function toggleDevBypass() {
+    devBypass.value = !devBypass.value
+  }
 
   return {
     user,
     loading,
     error,
+    devBypass,
     init,
     signIn,
     signUp,
     signOut,
     isAuthenticated,
+    toggleDevBypass,
   }
 })

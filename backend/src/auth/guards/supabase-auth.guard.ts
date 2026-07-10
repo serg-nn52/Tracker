@@ -12,29 +12,27 @@ export class SupabaseAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+    const token = this.extractToken(request);
 
-    // Режим разработки — пропускаем JWT, используем dev-пользователя
+    if (token) {
+      // Есть JWT — проверяем и используем реального пользователя
+      const { data, error } = await this.supabase.getClient().auth.getUser(token);
+
+      if (!error && data?.user) {
+        request['user'] = data.user;
+        request['accessToken'] = token;
+        return true;
+      }
+    }
+
+    // Нет JWT или он недействителен — в DEV_MODE используем dev-пользователя
     if (process.env.DEV_MODE === 'true') {
       const userId = await this.supabase.getDevUserId();
       request['user'] = { id: userId };
       return true;
     }
 
-    const token = this.extractToken(request);
-
-    if (!token) {
-      throw new UnauthorizedException('Токен не предоставлен');
-    }
-
-    const { data, error } = await this.supabase.getClient().auth.getUser(token);
-
-    if (error || !data?.user) {
-      throw new UnauthorizedException('Недействительный токен');
-    }
-
-    // Сохраняем пользователя в request для дальнейшего использования
-    request['user'] = data.user;
-    return true;
+    throw new UnauthorizedException('Токен не предоставлен');
   }
 
   private extractToken(request: any): string | null {
