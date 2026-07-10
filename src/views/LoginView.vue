@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 
+const router = useRouter()
 const auth = useAuthStore()
 
 const email = ref('')
@@ -35,6 +37,7 @@ async function handleSubmit() {
       }
     } else {
       await auth.signIn(email.value, password.value)
+      router.push({ name: 'timer' })
     }
   } catch (e: unknown) {
     formError.value = e instanceof Error ? e.message : 'Произошла ошибка'

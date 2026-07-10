@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useSessionsStore } from '../stores/sessionsStore'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const sessionsStore = useSessionsStore()
 
 onMounted(() => {
   sessionsStore.fetchSessions()
 })
+
+async function handleLogout() {
+  await auth.signOut()
+  router.push({ name: 'login' })
+}
 
 const tabs = [
   { name: 'timer', label: 'Таймер', icon: '⏱' },
@@ -45,7 +51,7 @@ const userEmail = auth.user?.email ?? ''
       <div :class="$style.sidebarFooter">
         <div :class="$style.userSection" v-if="auth.user">
           <span :class="$style.userEmail">{{ userEmail }}</span>
-          <button :class="$style.logoutBtn" @click="auth.signOut()">Выйти</button>
+          <button :class="$style.logoutBtn" @click="handleLogout">Выйти</button>
         </div>
         <ThemeToggle />
       </div>
