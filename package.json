@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:all": "concurrently -n front,back -c cyan,blue \"npm run dev\" \"npm run dev:backend\"",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.ts",
@@ -23,6 +25,7 @@
     "@playwright/test": "^1.61.1",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vue/test-utils": "^2.4.11",
+    "concurrently": "^8.2.2",
     "eslint": "^9.39.4",
     "eslint-plugin-vue": "^10.9.2",
     "globals": "^17.7.0",
