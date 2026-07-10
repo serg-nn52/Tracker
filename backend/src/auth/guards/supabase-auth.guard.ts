@@ -11,12 +11,14 @@ export class SupabaseAuthGuard implements CanActivate {
   constructor(private readonly supabase: SupabaseService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest()
+
     // Пропускаем проверку в режиме разработки
     if (process.env.DEV_MODE === 'true') {
+      request['user'] = { id: '00000000-0000-0000-0000-000000000001' }
       return true
     }
 
-    const request = context.switchToHttp().getRequest()
     const token = this.extractToken(request)
 
     if (!token) {
