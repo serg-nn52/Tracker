@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:backend": "cd backend && npm run start:dev",
-    "dev:all": "concurrently -n front,back -c cyan,blue \"npm run dev\" \"npm run dev:backend\"",
+    "dev:all": "bash scripts/dev-all.sh",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.ts",
