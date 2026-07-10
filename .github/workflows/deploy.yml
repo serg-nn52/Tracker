@@ -33,7 +33,7 @@ jobs:
       - name: Build
         run: npm run build
 
-  deploy:
+  deploy-netlify:
     if: github.ref == 'refs/heads/main'
     needs: quality
     runs-on: ubuntu-latest
@@ -59,3 +59,13 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  deploy-render:
+    if: github.ref == 'refs/heads/main'
+    needs: quality
+    runs-on: ubuntu-latest
+    name: Deploy to Render
+
+    steps:
+      - name: Trigger Render Deploy
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
