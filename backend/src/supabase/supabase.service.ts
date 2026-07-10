@@ -21,7 +21,7 @@ export class SupabaseService implements OnModuleInit {
     }
 
     const realtimeOptions = {
-      transport: WebSocket,
+      transport: WebSocket as any,
     }
 
     // Для проверки JWT — используем anon key
