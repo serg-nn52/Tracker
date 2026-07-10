@@ -24,8 +24,8 @@ test.describe('Navigation', () => {
     await page.goto('/')
 
     // Вкладка "Таймер" активна по умолчанию
-    const timerBtn = page.getByRole('button', { name: '⏱ Таймер' })
-    await expect(timerBtn).toBeVisible()
+    const timerLink = page.getByRole('link', { name: '⏱ Таймер' })
+    await expect(timerLink).toBeVisible()
 
     // Клик на "Неделя"
     await page.getByText('Неделя').click()

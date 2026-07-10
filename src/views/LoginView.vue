@@ -36,8 +36,8 @@ async function handleSubmit() {
     } else {
       await auth.signIn(email.value, password.value)
     }
-  } catch (e: any) {
-    formError.value = e.message || 'Произошла ошибка'
+  } catch (e: unknown) {
+    formError.value = e instanceof Error ? e.message : 'Произошла ошибка'
   }
 }
 </script>
@@ -92,7 +92,7 @@ async function handleSubmit() {
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .page {
   display: flex;
   align-items: center;

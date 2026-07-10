@@ -37,7 +37,7 @@ function handleDelete() {
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .card {
   display: flex;
   align-items: center;

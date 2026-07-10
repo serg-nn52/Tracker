@@ -18,7 +18,7 @@ const { theme } = storeToRefs(themeStore)
   </button>
 </template>
 
-<style module>
+<style module lang="scss">
 .toggle {
   display: flex;
   align-items: center;

@@ -2,17 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { TimeSession } from '../types/session'
 import { todayDate, getWeekRange, dateToISO } from '../utils/formatters'
-import { api } from '../utils/api'
-
-interface SessionRow {
-  id: string
-  user_id: string
-  start_time: string
-  end_time: string
-  duration: number
-  date: string
-  created_at: string
-}
+import { sessionsService, type SessionRow } from '../services/sessionsService'
 
 function mapRowToSession(row: SessionRow): TimeSession {
   return {
@@ -34,10 +24,10 @@ export const useSessionsStore = defineStore('sessions', () => {
     loading.value = true
     error.value = null
     try {
-      const rows = await api.get<SessionRow[]>('/sessions')
+      const rows = await sessionsService.fetchAll()
       sessions.value = rows.map(mapRowToSession)
-    } catch (e: any) {
-      error.value = e.message || 'Ошибка загрузки сессий'
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : 'Ошибка загрузки сессий'
       // При ошибке не сбрасываем локальные данные
     } finally {
       loading.value = false
@@ -97,7 +87,7 @@ export const useSessionsStore = defineStore('sessions', () => {
       if (session.endTime === null) {
         throw new Error('Нельзя сохранить незавершённую сессию')
       }
-      const row = await api.post<SessionRow>('/sessions', {
+      const row = await sessionsService.create({
         startTime: new Date(session.startTime).toISOString(),
         endTime: new Date(session.endTime).toISOString(),
         duration: session.duration,
@@ -107,18 +97,18 @@ export const useSessionsStore = defineStore('sessions', () => {
       const created = mapRowToSession(row)
       sessions.value.push(created)
       return created
-    } catch (e: any) {
-      error.value = e.message || 'Ошибка создания сессии'
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : 'Ошибка создания сессии'
       throw e
     }
   }
 
   async function deleteSession(id: string) {
     try {
-      await api.delete(`/sessions/${id}`)
+      await sessionsService.remove(id)
       sessions.value = sessions.value.filter((s) => s.id !== id)
-    } catch (e: any) {
-      error.value = e.message || 'Ошибка удаления сессии'
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : 'Ошибка удаления сессии'
       throw e
     }
   }

@@ -68,7 +68,7 @@ const { isRunning, currentElapsed } = storeToRefs(timerStore)
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .timerView {
   display: flex;
   flex-direction: column;

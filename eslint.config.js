@@ -8,6 +8,7 @@ export default [
   {
     ignores: [
       'dist/',
+      'backend/',
       'node_modules/',
       '*.config.*',
       'public/',

@@ -16,7 +16,7 @@ defineProps<{
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .display {
   text-align: center;
   padding: var(--spacing-xl) 0;

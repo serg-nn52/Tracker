@@ -1,14 +1,22 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import './styles/variables.css'
-import './styles/reset.css'
-import './styles/typography.css'
-import './styles/base.css'
-import './styles/utilities.css'
+import router from './router'
+import { useAuthStore } from './stores/authStore'
+import './styles/variables.scss'
+import './styles/reset.scss'
+import './styles/typography.scss'
+import './styles/base.scss'
+import './styles/utilities.scss'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.mount('#app')
+app.use(router)
+
+// Инициализируем auth до монтирования, чтобы защищённые маршруты сразу знали статус
+const auth = useAuthStore()
+auth.init().finally(() => {
+  app.mount('#app')
+})

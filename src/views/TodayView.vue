@@ -40,7 +40,7 @@ const todayFormatted = formatDate(Date.now())
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .todayView {
   padding: var(--spacing-2xl) 0;
   max-width: 600px;

@@ -54,7 +54,7 @@ function progressPercent(total: number): number {
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .weeklyView {
   padding: var(--spacing-2xl) 0;
   max-width: 600px;
